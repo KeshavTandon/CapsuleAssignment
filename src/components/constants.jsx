@@ -1,0 +1,1 @@
+export const API_URL="https://backend.cappsule.co.in/api/v1/new_search?q=paracetamol&pharmacyIds=1,2,3"
