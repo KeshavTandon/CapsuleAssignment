@@ -43,6 +43,27 @@ class StoreService{
     },null)
     return x;
    }
-}
+
+   prepareAvailibilityMap=(stores)=>{
+    let availibilityMap = {};
+       for(let saltObj of stores.saltSuggestions){
+          let salt = saltObj.salt;
+          availibilityMap[salt] = {};
+         for(let form of Object.keys(saltObj.salt_forms_json)){
+             for(let strength of Object.keys(saltObj.salt_forms_json[form])){
+                 for(let packing of Object.keys(saltObj.salt_forms_json[form][strength])){
+                    for(let product of Object.values(saltObj.salt_forms_json[form][strength][packing]))
+                      if(product){
+                            availibilityMap[salt][form] = true;
+                            availibilityMap[salt][strength] = true;
+                            availibilityMap[salt][packing] = true;                      
+                        }
+                    }
+                }
+            }
+         }
+         return availibilityMap;
+       }
+   }
 
 export default new StoreService();

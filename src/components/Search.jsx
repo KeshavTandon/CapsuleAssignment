@@ -3,13 +3,18 @@ import icon from "../components/searchIcon.png";
 import Card from "./Card";
 import ButtonDisplay from "./ButtonDisplay";
 import { useSelector, useDispatch } from "react-redux";
-import { addStore } from "./DataSlice";
+import { addStore, setAvailibilityMap } from "./DataSlice";
 import storeService from "../StoreService";
 import { addOrignalData } from "./OrignalSlice";
 
 function Search() {
   const storeItems = useSelector((state) => state.stores.items || []);
-  const orignalItems = useSelector((state) => state.orignalData.orignalItems || []);
+  const orignalItems = useSelector(
+    (state) => state.orignalData.orignalItems || []
+  );
+  const availibilityMap = useSelector(
+    (state) => state.stores.availibilityMap || {}
+  );
 
   const [searchQuery, setSearch] = useState("");
   const dispatch = useDispatch();
@@ -31,8 +36,12 @@ function Search() {
       const saltAvailabilityList = storeService.prepareSaltAvailabilityList(
         json.data
       );
+      const preparedAvailibilityMap = storeService.prepareAvailibilityMap(
+        json.data
+      );
       dispatch(addStore(saltAvailabilityList));
-      dispatch(addOrignalData(json.data))
+      dispatch(setAvailibilityMap(preparedAvailibilityMap));
+      dispatch(addOrignalData(json.data));
     } catch (error) {
       console.log(error);
     }
@@ -41,26 +50,40 @@ function Search() {
   const setSelectedKeys = (key, value, index) => {
     let clonedOrignalItems = JSON.parse(JSON.stringify(orignalItems));
     let clonedStoreItems = JSON.parse(JSON.stringify(storeItems));
-    if(key == 'form'){
-       clonedOrignalItems.saltSuggestions[index].most_common.Form = value;
-       clonedOrignalItems.saltSuggestions[index].most_common.Strength = Object.keys(orignalItems.saltSuggestions[index].salt_forms_json[value])[0];
-       clonedOrignalItems.saltSuggestions[index].most_common.Packing = Object.keys(orignalItems.saltSuggestions[index].salt_forms_json[value][Object.keys(orignalItems.saltSuggestions[index].salt_forms_json[value])[0]])[0];
-
+    if (key == "form") {
+      clonedOrignalItems.saltSuggestions[index].most_common.Form = value;
+      clonedOrignalItems.saltSuggestions[index].most_common.Strength =
+        Object.keys(
+          orignalItems.saltSuggestions[index].salt_forms_json[value]
+        )[0];
+      clonedOrignalItems.saltSuggestions[index].most_common.Packing =
+        Object.keys(
+          orignalItems.saltSuggestions[index].salt_forms_json[value][
+            Object.keys(
+              orignalItems.saltSuggestions[index].salt_forms_json[value]
+            )[0]
+          ]
+        )[0];
     }
-    if(key == 'strength'){
-       clonedOrignalItems.saltSuggestions[index].most_common.Strength = value;
-       clonedOrignalItems.saltSuggestions[index].most_common.Packing = Object.keys(orignalItems.saltSuggestions[index].salt_forms_json[clonedOrignalItems.saltSuggestions[index].most_common.Form][value])[0];
+    if (key == "strength") {
+      clonedOrignalItems.saltSuggestions[index].most_common.Strength = value;
+      clonedOrignalItems.saltSuggestions[index].most_common.Packing =
+        Object.keys(
+          orignalItems.saltSuggestions[index].salt_forms_json[
+            clonedOrignalItems.saltSuggestions[index].most_common.Form
+          ][value]
+        )[0];
     }
-    if(key == 'packing'){
-       clonedOrignalItems.saltSuggestions[index].most_common.Packing = value;
+    if (key == "packing") {
+      clonedOrignalItems.saltSuggestions[index].most_common.Packing = value;
     }
     const formattedNode = storeService.applyFilteredSuggestions(
-        clonedOrignalItems.saltSuggestions[index]
-      );
-     clonedStoreItems[index] = formattedNode;
-      dispatch(addStore(clonedStoreItems));
-      dispatch(addOrignalData(clonedOrignalItems))
-  }
+      clonedOrignalItems.saltSuggestions[index]
+    );
+    clonedStoreItems[index] = formattedNode;
+    dispatch(addStore(clonedStoreItems));
+    dispatch(addOrignalData(clonedOrignalItems));
+  };
 
   return (
     <div className="flex flex-col items-center justify-center mt-20 space-y-10">
@@ -83,16 +106,48 @@ function Search() {
       </div>
 
       {storeItems.map((item, index) => (
-        <Card key={item.id} salt={item.salt} selectedValues={item.selectedValues} minimumSellingPrice = {item.minimumSellingPrice} >
-          <ButtonDisplay callback={(parentKey, value)=>{
-             setSelectedKeys(parentKey, value, index)
-          }} parentKey='form' keyParams={item.forms} selectedValue = {item.selectedValues.form} label="Form:" />
-          <ButtonDisplay callback={(parentKey, value)=>{
-            setSelectedKeys(parentKey, value, index)
-          }} parentKey='strength' keyParams={item.strengths} selectedValue = {item.selectedValues.strength} label="Strength:" />
-          <ButtonDisplay callback={(parentKey, value)=>{
-            setSelectedKeys(parentKey, value, index)
-          }} parentKey='packing' keyParams={item.packings} selectedValue = {item.selectedValues.packing} label="Packing:" />
+        <Card
+          key={item.id}
+          salt={item.salt}
+          selectedValues={item.selectedValues}
+          minimumSellingPrice={item.minimumSellingPrice}
+        >
+          <ButtonDisplay
+            availibilityMap={availibilityMap}
+            callback={(parentKey, value) => {
+              setSelectedKeys(parentKey, value, index);
+            }}
+            parentKey="form"
+            keyParams={item.forms}
+            selectedValue={item.selectedValues.form}
+            label="Form:"
+            minimumSellingPrice={item.minimumSellingPrice}
+            salt={item.salt}
+          />
+          <ButtonDisplay
+            availibilityMap={availibilityMap}
+            callback={(parentKey, value) => {
+              setSelectedKeys(parentKey, value, index);
+            }}
+            parentKey="strength"
+            keyParams={item.strengths}
+            selectedValue={item.selectedValues.strength}
+            label="Strength:"
+            minimumSellingPrice={item.minimumSellingPrice}
+            salt={item.salt}
+          />
+          <ButtonDisplay
+            availibilityMap={availibilityMap}
+            callback={(parentKey, value) => {
+              setSelectedKeys(parentKey, value, index);
+            }}
+            parentKey="packing"
+            keyParams={item.packings}
+            selectedValue={item.selectedValues.packing}
+            label="Packing:"
+            minimumSellingPrice={item.minimumSellingPrice}
+            salt={item.salt}
+          />
         </Card>
       ))}
     </div>
